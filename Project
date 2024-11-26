@@ -1,0 +1,81 @@
+# Load necessary libraries
+library(ggplot2)    # For creating plots
+library(broom)      # For tidying model output
+
+# Step 1: Create the data frame
+anxiety_data <- data.frame(
+  monthly_bills = c(1000, 1500, 1200, 1600, 1300, 1100, 1400, 1200, 1500, 1400, 1800, 1800),
+  yearly_holidays = c(3, 3, 3, 0, 4, 3, 1, 1, 3, 3, 7, 5),
+  anxiety = c(5, 7, 4, 7, 6, 4, 7, 5, 7, 6, 9, 9)
+)
+
+# Step 2: Explore the data
+# Print the first few rows to verify the data
+print(head(anxiety_data))
+
+# Calculate summary statistics
+summary(anxiety_data)
+
+# Create a scatter plot to visualize the relationship between yearly_holidays and monthly_bills
+ggplot(anxiety_data, aes(x = yearly_holidays, y = monthly_bills)) +
+  geom_point() +
+  labs(title = "Scatter Plot of Yearly Holidays vs. Monthly Bills",
+       x = "Yearly Holidays",
+       y = "Monthly Bills") +
+  theme_minimal()
+
+# Step 3: Perform simple linear regression
+# Fit a linear model where monthly_bills is the dependent variable and yearly_holidays is the independent variable
+model <- lm(monthly_bills ~ yearly_holidays, data = anxiety_data)
+
+# Step 4: Examine the model results
+# Print a summary of the model, including coefficients, R-squared, and p-values
+summary(model)
+
+# Use broom to get a tidy version of the model coefficients
+tidy_model <- tidy(model)
+print(tidy_model)
+
+# Step 5: Visualize the regression line
+ggplot(anxiety_data, aes(x = yearly_holidays, y = monthly_bills)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  labs(title = "Linear Regression: Yearly Holidays vs. Monthly Bills",
+       x = "Yearly Holidays",
+       y = "Monthly Bills") +
+  theme_minimal()
+
+# Step 6: Model diagnostics
+# Create diagnostic plots to check assumptions
+par(mfrow = c(2, 2))  # Set up a 2x2 plot layout
+plot(model)
+
+# Step 7: Predictions
+# Create a data frame with new yearly_holidays values for prediction
+new_data <- data.frame(yearly_holidays = seq(min(anxiety_data$yearly_holidays), 
+                                             max(anxiety_data$yearly_holidays), 
+                                             length.out = 100))
+
+# Make predictions using the model
+predictions <- predict(model, newdata = new_data, interval = "confidence")
+
+# Combine predictions with new_data
+prediction_data <- cbind(new_data, predictions)
+
+# Plot the original data, regression line, and confidence interval
+ggplot() +
+  geom_point(data = anxiety_data, aes(x = yearly_holidays, y = monthly_bills)) +
+  geom_line(data = prediction_data, aes(x = yearly_holidays, y = fit), color = "blue") +
+  geom_ribbon(data = prediction_data, aes(x = yearly_holidays, ymin = lwr, ymax = upr), alpha = 0.2) +
+  labs(title = "Linear Regression with Confidence Interval",
+       x = "Yearly Holidays",
+       y = "Monthly Bills") +
+  theme_minimal()
+
+# Print the R-squared value
+cat("R-squared:", summary(model)$r.squared, "\n")
+
+# Print the equation of the regression line
+cat("Regression equation: monthly_bills =", 
+    round(coef(model)[1], 3), "+", 
+    round(coef(model)[2], 3), "* yearly_holidays\n")
